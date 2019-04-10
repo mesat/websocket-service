@@ -42,7 +42,7 @@ public class Interceptor {
 		List<Mat> imageList = new ArrayList<>();
 		
 		
-		String imgPath = "src/main/resources/dcp_images/enhancement/tulips.bmp";
+		String imgPath = "home/mesat/Pictures/home/mesat/Pictures/Screenshot from 2019-03-02 23-16-13.png";
 		Mat image = Imgcodecs.imread(imgPath, Imgcodecs.CV_LOAD_IMAGE_COLOR);
 		List<Mat> mv = new ArrayList<>();
 		Core.split(image, mv);

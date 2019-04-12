@@ -1,5 +1,9 @@
 package websocket;
 
+import java.awt.FlowLayout;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -7,11 +11,15 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfByte;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.core.CvType;
@@ -20,6 +28,8 @@ public class Interceptor {
 	private static final Log logger = LogFactory.getLog(Interceptor.class);
 	private ConcurrentMap<Long, byte[]> frame;
 	private ConcurrentMap<Long, byte[]> frameBuffer;
+
+	List<Mat> mv2 = new ArrayList<>();
 	public volatile Boolean onBuffer = Boolean.valueOf(false);
 	private static Interceptor INSTANCE;
 
@@ -87,8 +97,15 @@ public class Interceptor {
 			synchronized (onBuffer) {
 				if (frameBuffer.size() > 2) {
 					onBuffer = Boolean.valueOf(false);
+					Mat show = new Mat();
+					Core.merge(mv2, show);
+					imshow(show, "image");
 				}
 			}
+			Mat matdata = new Mat();
+			matdata.put(0, 0, data);
+			mv2.add(matdata);
+
 			frameBuffer.put(time, data);
 			Long[] loa = (Long[]) frameBuffer.keySet().toArray(new Long[0]);
 			String messageLog = new String();
@@ -113,5 +130,25 @@ public class Interceptor {
 		}
 		logger.info("frame: ".concat(messageLog));
 		frame.clear();
+	}
+	
+	public void imshow(Mat src, String name) {
+		BufferedImage bufImage = null;
+		try {
+			MatOfByte matOfByte = new MatOfByte();
+			Imgcodecs.imencode(".jpg", src, matOfByte);
+			byte[] byteArray = matOfByte.toArray();
+			InputStream in = new ByteArrayInputStream(byteArray);
+			bufImage = ImageIO.read(in);
+
+			JFrame frame = new JFrame(name);
+			frame.getContentPane().setLayout(new FlowLayout());
+			frame.getContentPane().add(new JLabel(new ImageIcon(bufImage)));
+			frame.pack();
+			frame.setVisible(true);
+			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 }

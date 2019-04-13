@@ -5,6 +5,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,17 +26,27 @@ import org.opencv.imgproc.Imgproc;
 import org.opencv.core.CvType;
 
 public class Interceptor {
+
+	JFrame frameImage; 
+	JLabel label;
 	private static final Log logger = LogFactory.getLog(Interceptor.class);
 	private ConcurrentMap<Long, byte[]> frame;
 	private ConcurrentMap<Long, byte[]> frameBuffer;
 
-	List<Mat> mv2 = new ArrayList<>();
 	public volatile Boolean onBuffer = Boolean.valueOf(false);
 	private static Interceptor INSTANCE;
 
 	private Interceptor() {
 		frameBuffer = new ConcurrentHashMap();
 		frame = new ConcurrentHashMap();
+		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
+		
+		frameImage = new JFrame("image");
+		frameImage.setVisible(false);
+		frameImage.setAlwaysOnTop(false);
+		frameImage.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+		//frameImage.getContentPane().setLayout(new FlowLayout());
 	}
 
 	public static Interceptor getInstance() {
@@ -50,22 +61,19 @@ public class Interceptor {
 		// To load OpenCV core library
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 		List<Mat> imageList = new ArrayList<>();
-		
-		
+
 		String imgPath = "home/mesat/Pictures/home/mesat/Pictures/Screenshot from 2019-03-02 23-16-13.png";
 		Mat image = Imgcodecs.imread(imgPath, Imgcodecs.CV_LOAD_IMAGE_COLOR);
 		List<Mat> mv = new ArrayList<>();
 		Core.split(image, mv);
 
-		
 		// Create an zero pixel image for filling purposes - will become clear later
 		// Also create container images for B G R channels as colour images
 		Mat empty_image = new Mat().zeros(image.rows(), image.cols(), CvType.CV_8UC1);
 		Mat result_blue = new Mat(image.rows(), image.cols(), CvType.CV_8UC3); // notice the 3 channels here!
 		Mat result_green = new Mat(image.rows(), image.cols(), CvType.CV_8UC3); // notice the 3 channels here!
 		Mat result_red = new Mat(image.rows(), image.cols(), CvType.CV_8UC3); // notice the 3 channels here!
-		
-		
+
 		Mat imageMerged = new Mat();
 		Mat imageR = new Mat();
 		Mat imageG = new Mat();
@@ -92,61 +100,104 @@ public class Interceptor {
 	}
 
 	public void addData(Long time, byte[] data) {
+		if (time == null || data == null || data.length < 1) {
+			return;
+		}
 
 		if (onBuffer.booleanValue()) {
-			synchronized (onBuffer) {
-				if (frameBuffer.size() > 2) {
-					onBuffer = Boolean.valueOf(false);
-					Mat show = new Mat();
-					Core.merge(mv2, show);
-					imshow(show, "image");
-				}
-			}
-			Mat matdata = new Mat();
-			matdata.put(0, 0, data);
-			mv2.add(matdata);
 
-			frameBuffer.put(time, data);
+			byte[] contains = frameBuffer.put(time, data);
+			if (contains != null) {
+				logger.error("TIME CONFILICTED!!!!");
+			}
 			Long[] loa = (Long[]) frameBuffer.keySet().toArray(new Long[0]);
 			String messageLog = new String();
 			for (int i = 0; i < loa.length; i++) {
-				messageLog.concat(String.valueOf(loa[i])).concat(" ");
+				messageLog = messageLog.concat(String.valueOf(loa[i])).concat(" ");
 			}
 			logger.info("frameBuffer: ".concat(messageLog));
-			frameBuffer.clear();
+			synchronized (onBuffer) {
+				if (frameBuffer.size() > 2) {
+					onBuffer = Boolean.valueOf(false);
+					List<Mat> mv2 = new ArrayList<>();
+
+					for (byte[] bytedata : frameBuffer.values()) {
+						Mat matdata = new Mat(720,1280,CvType.CV_8UC1);
+						matdata.put(0, 0, bytedata);
+						mv2.add(matdata);
+					}
+					if (mv2.size() == 3) {
+						Mat show = new Mat();
+						 Core.merge(mv2, show);
+						 imshow(show, "image");
+
+					} else
+						logger.error("size was not 3");
+					mv2.clear();
+					frameBuffer.clear();
+					return;
+				}
+			}
 
 			return;
 		}
-		synchronized (onBuffer) {
-			if (frame.size() > 2) {
-				onBuffer = Boolean.valueOf(true);
-			}
+		byte[] contains = frame.put(time, data);
+		if (contains != null) {
+			logger.error("TIME CONFILICTED!!!!");
 		}
-		frame.put(time, data);
 		Long[] loa = (Long[]) frame.keySet().toArray(new Long[0]);
 		String messageLog = "";
 		for (int i = 0; i < loa.length; i++) {
 			messageLog = messageLog.concat(String.valueOf(loa[i])).concat(" ");
 		}
 		logger.info("frame: ".concat(messageLog));
-		frame.clear();
+		synchronized (onBuffer) {
+
+			if (frame.size() > 2) {
+				onBuffer = Boolean.valueOf(true);
+
+				List<Mat> mv2 = new ArrayList<>();
+				for (byte[] bytedata : frame.values()) {
+					Mat matdata = new Mat();
+					matdata.put(0, 0, bytedata);
+					mv2.add(matdata);
+				}
+				if (mv2.size() == 3) {
+					Mat show = new Mat();
+					// Core.merge(mv2, show);
+					// imshow(show, "image");
+
+				} else
+					logger.error("size was not 3");
+				mv2.clear();
+				frame.clear();
+				return;
+			}
+		}
+
 	}
-	
+
 	public void imshow(Mat src, String name) {
 		BufferedImage bufImage = null;
 		try {
+
+
 			MatOfByte matOfByte = new MatOfByte();
 			Imgcodecs.imencode(".jpg", src, matOfByte);
 			byte[] byteArray = matOfByte.toArray();
 			InputStream in = new ByteArrayInputStream(byteArray);
 			bufImage = ImageIO.read(in);
+			frameImage.setVisible(false);
+			if (label!=null)
 
-			JFrame frame = new JFrame(name);
-			frame.getContentPane().setLayout(new FlowLayout());
-			frame.getContentPane().add(new JLabel(new ImageIcon(bufImage)));
-			frame.pack();
-			frame.setVisible(true);
-			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+			frameImage.getContentPane().remove(label);
+			label = new JLabel(new ImageIcon(bufImage));
+			frameImage.getContentPane().add(label);
+			frameImage.repaint();
+
+			frameImage.setVisible(true);
+
+			frameImage.pack();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

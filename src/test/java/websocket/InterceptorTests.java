@@ -69,13 +69,15 @@ public class InterceptorTests {
 			//Core.subtract(imageB, new Scalar(150), imageB);
 			//Core.inRange(imageR, new Scalar(0, 0, 0),new Scalar(255,0, 0), imageR);
 			Imgproc.threshold(imageB, imageB, 100, 101, Imgproc.THRESH_BINARY);
-			byte[][] list = new byte[3][1000];
-			imageR.get(0, 0,list[0]);
-			imshow(image, "image");
+			byte[] list = new byte[(int) (imageR.total()*image.elemSize())];
+			imageR.get(0, 0,list);
+			imshow(imageR, "image");
 			imshow(mat, "imageB");
 			imshow(imageG, "imageG");
-			imshow(imageR, "imageR");
-			imageR.put(image.rows(), image.cols(), list[0]);
+			Mat imageT= new Mat(720,1280,CvType.CV_8UC1);
+			
+			empty_image.put(0, 0, list);
+			imshow(empty_image, "imageT");
 			imageG.put(image.rows(), image.cols(), list[1]);
 			imageB.put(image.rows(), image.cols(), list[2]);
 

@@ -20,6 +20,6 @@ public class ServerResponseController
   @SendTo({"/topic/response"})
   public ByteArrayResponseModel getData(ByteArrayModel message) throws Exception { logger.info(String.valueOf(message.getData()));
     Interceptor.getInstance().addData(Long.valueOf(message.getTime()), message.getData());
-    return new ByteArrayResponseModel(HtmlUtils.htmlEscape(String.valueOf(ByteArrayUtil.toHexString(message.getData()))));
+    return new ByteArrayResponseModel(HtmlUtils.htmlEscape(" "/*String.valueOf(ByteArrayUtil.toHexString(message.getData()))*/));
   }
 }

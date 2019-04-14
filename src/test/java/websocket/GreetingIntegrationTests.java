@@ -1,6 +1,7 @@
 package websocket;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -12,7 +13,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
@@ -30,7 +30,8 @@ import org.springframework.web.socket.sockjs.client.SockJsClient;
 import org.springframework.web.socket.sockjs.client.Transport;
 import org.springframework.web.socket.sockjs.client.WebSocketTransport;
 
-import websocket.*;
+import websocket.ByteArrayModel;
+import websocket.ByteArrayResponseModel;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -85,7 +86,7 @@ public class GreetingIntegrationTests {
                     }
                 });
                 try {
-                    session.send("/app/hello", new ByteArrayModel(new byte[] {'a'}));
+                    session.send("/app/rgbdata", new ByteArrayModel(new byte[] {'a'}));
                 } catch (Throwable t) {
                     failure.set(t);
                     latch.countDown();
@@ -93,7 +94,7 @@ public class GreetingIntegrationTests {
             }
         };
 
-        this.stompClient.connect("ws://localhost:{port}/hello", this.headers, handler, this.port);
+        this.stompClient.connect("ws://localhost:{port}/rgbdata", this.headers, handler, this.port);
 
         if (latch.await(3, TimeUnit.SECONDS)) {
             if (failure.get() != null) {

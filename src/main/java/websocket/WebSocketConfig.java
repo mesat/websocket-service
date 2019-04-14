@@ -24,6 +24,6 @@ public class WebSocketConfig implements org.springframework.web.socket.config.an
 
   public void registerStompEndpoints(StompEndpointRegistry registry)
   {
-    registry.addEndpoint(new String[] { "/hello" }).setAllowedOrigins(new String[] { "*" }).withSockJS();
+    registry.addEndpoint(new String[] { "/rgbdata" }).setAllowedOrigins(new String[] { "*" }).withSockJS();
   }
 }

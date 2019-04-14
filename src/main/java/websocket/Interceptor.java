@@ -27,8 +27,9 @@ import org.opencv.core.CvType;
 
 public class Interceptor {
 
-	JFrame frameImage; 
-	JLabel label;
+	static JFrame frameImage; 
+	static JLabel jLabel;
+	static ImageIcon imageIcon;
 	private static final Log logger = LogFactory.getLog(Interceptor.class);
 	private ConcurrentMap<Long, byte[]> frame;
 	private ConcurrentMap<Long, byte[]> frameBuffer;
@@ -44,7 +45,11 @@ public class Interceptor {
 		frameImage = new JFrame("image");
 		frameImage.setVisible(false);
 		frameImage.setAlwaysOnTop(false);
-		frameImage.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frameImage.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+		imageIcon = new ImageIcon();
+		jLabel = new JLabel(imageIcon);
+
+		frameImage.getContentPane().add(jLabel);
 
 		//frameImage.getContentPane().setLayout(new FlowLayout());
 	}
@@ -132,7 +137,7 @@ public class Interceptor {
 						 imshow(show, "image");
 
 					} else
-						logger.error("size was not 3");
+						logger.error("frameBuffer size was not 3");
 					mv2.clear();
 					frameBuffer.clear();
 					return;
@@ -155,20 +160,20 @@ public class Interceptor {
 
 			if (frame.size() > 2) {
 				onBuffer = Boolean.valueOf(true);
-
 				List<Mat> mv2 = new ArrayList<>();
+
 				for (byte[] bytedata : frame.values()) {
-					Mat matdata = new Mat();
+					Mat matdata = new Mat(720,1280,CvType.CV_8UC1);
 					matdata.put(0, 0, bytedata);
 					mv2.add(matdata);
 				}
 				if (mv2.size() == 3) {
 					Mat show = new Mat();
-					// Core.merge(mv2, show);
-					// imshow(show, "image");
+					 Core.merge(mv2, show);
+					 imshow(show, "image");
 
 				} else
-					logger.error("size was not 3");
+					logger.error("frame size was not 3");
 				mv2.clear();
 				frame.clear();
 				return;
@@ -185,19 +190,16 @@ public class Interceptor {
 			MatOfByte matOfByte = new MatOfByte();
 			Imgcodecs.imencode(".jpg", src, matOfByte);
 			byte[] byteArray = matOfByte.toArray();
-			InputStream in = new ByteArrayInputStream(byteArray);
-			bufImage = ImageIO.read(in);
-			frameImage.setVisible(false);
-			if (label!=null)
-
-			frameImage.getContentPane().remove(label);
-			label = new JLabel(new ImageIcon(bufImage));
-			frameImage.getContentPane().add(label);
+			InputStream inputStream = new ByteArrayInputStream(byteArray);
+			bufImage = ImageIO.read(inputStream);
+			//frameImage.setVisible(false);
+			imageIcon.setImage(bufImage);
+			//((JLabel)frameImage.getContentPane().getComponent(0)).setIcon(new ImageIcon(bufImage));
 			frameImage.repaint();
+			frameImage.pack();
 
 			frameImage.setVisible(true);
 
-			frameImage.pack();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

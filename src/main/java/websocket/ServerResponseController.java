@@ -16,7 +16,7 @@ public class ServerResponseController
   
   public ServerResponseController() {}
   
-  @MessageMapping({"/hello"})
+  @MessageMapping({"/rgbdata"})
   @SendTo({"/topic/response"})
   public ByteArrayResponseModel getData(ByteArrayModel message) throws Exception { logger.info(String.valueOf(message.getData()));
     Interceptor.getInstance().addData(Long.valueOf(message.getTime()), message.getData());

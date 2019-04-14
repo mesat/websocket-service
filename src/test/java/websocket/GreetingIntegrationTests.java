@@ -76,7 +76,7 @@ public class GreetingIntegrationTests {
                     public void handleFrame(StompHeaders headers, Object payload) {
                     	ByteArrayResponseModel greeting = (ByteArrayResponseModel) payload;
                         try {
-                            assertEquals("Hello, Spring!", "Hello, Spring!");
+                            assertEquals(greeting.getContent(), " ");
                         } catch (Throwable t) {
                             failure.set(t);
                         } finally {

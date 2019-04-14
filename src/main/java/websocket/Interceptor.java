@@ -45,7 +45,7 @@ public class Interceptor {
 		frameImage = new JFrame("image");
 		frameImage.setVisible(false);
 		frameImage.setAlwaysOnTop(false);
-		frameImage.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+		frameImage.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		imageIcon = new ImageIcon();
 		jLabel = new JLabel(imageIcon);
 
@@ -60,58 +60,14 @@ public class Interceptor {
 		}
 		return INSTANCE;
 	}
-
-	public void ProcessData(byte[][] list) {
-
-		// To load OpenCV core library
-		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
-		List<Mat> imageList = new ArrayList<>();
-
-		String imgPath = "home/mesat/Pictures/home/mesat/Pictures/Screenshot from 2019-03-02 23-16-13.png";
-		Mat image = Imgcodecs.imread(imgPath, Imgcodecs.CV_LOAD_IMAGE_COLOR);
-		List<Mat> mv = new ArrayList<>();
-		Core.split(image, mv);
-
-		// Create an zero pixel image for filling purposes - will become clear later
-		// Also create container images for B G R channels as colour images
-		Mat empty_image = new Mat().zeros(image.rows(), image.cols(), CvType.CV_8UC1);
-		Mat result_blue = new Mat(image.rows(), image.cols(), CvType.CV_8UC3); // notice the 3 channels here!
-		Mat result_green = new Mat(image.rows(), image.cols(), CvType.CV_8UC3); // notice the 3 channels here!
-		Mat result_red = new Mat(image.rows(), image.cols(), CvType.CV_8UC3); // notice the 3 channels here!
-
-		Mat imageMerged = new Mat();
-		Mat imageR = new Mat();
-		Mat imageG = new Mat();
-		Mat imageB = new Mat();
-		imageR.get(400, 400, list[0]);
-		imageG.get(400, 400, list[1]);
-		imageB.get(400, 400, list[2]);
-		imageList.add(imageB);
-		imageList.add(imageG);
-		imageList.add(imageR);
-
-		Core.merge(imageList, imageMerged);
-
-		// Creating the empty destination matrix
-		Mat destination = new Mat();
-
-		// Converting the image to gray scale and
-		// saving it in the dst matrix
-		Imgproc.cvtColor(imageMerged, destination, Imgproc.COLOR_RGB2YCrCb);
-
-		// Writing the image
-		Imgcodecs.imwrite("GeeksforGeeks.jpg", destination);
-		System.out.println("The image is successfully to Grayscale");
-	}
-
-	public void addData(Long time, byte[] data) {
-		if (time == null || data == null || data.length < 1) {
+	public void addData(ByteArrayModel model) {
+		if ( model.getData() == null || model.getData().length < 1 || model.getHeight() == 0 || model.getWidth()== 0) {
 			return;
 		}
 
 		if (onBuffer.booleanValue()) {
 
-			byte[] contains = frameBuffer.put(time, data);
+			byte[] contains = frameBuffer.put(model.getTime(), model.getData());
 			if (contains != null) {
 				logger.error("TIME CONFILICTED!!!!");
 			}
@@ -127,7 +83,7 @@ public class Interceptor {
 					List<Mat> mv2 = new ArrayList<>();
 
 					for (byte[] bytedata : frameBuffer.values()) {
-						Mat matdata = new Mat(720,1280,CvType.CV_8UC1);
+						Mat matdata = new Mat(model.getHeight(),model.getWidth(),CvType.CV_8UC1);
 						matdata.put(0, 0, bytedata);
 						mv2.add(matdata);
 					}
@@ -146,7 +102,7 @@ public class Interceptor {
 
 			return;
 		}
-		byte[] contains = frame.put(time, data);
+		byte[] contains = frame.put(model.getTime(), model.getData());
 		if (contains != null) {
 			logger.error("TIME CONFILICTED!!!!");
 		}
@@ -163,7 +119,7 @@ public class Interceptor {
 				List<Mat> mv2 = new ArrayList<>();
 
 				for (byte[] bytedata : frame.values()) {
-					Mat matdata = new Mat(720,1280,CvType.CV_8UC1);
+					Mat matdata = new Mat(model.getHeight(),model.getWidth(),CvType.CV_8UC1);
 					matdata.put(0, 0, bytedata);
 					mv2.add(matdata);
 				}
